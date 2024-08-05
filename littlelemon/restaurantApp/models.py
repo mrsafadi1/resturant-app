@@ -1,5 +1,5 @@
 from django.db import models
-from datetime import datetime
+from datetime import datetime, timedelta, time
 from django.utils import timezone
 # Create your models here.
 def get_hours():
@@ -14,11 +14,16 @@ class Booking(models.Model):
       return self.first_name
   
     @staticmethod
-    def get_available_times(date):
+    def get_available_times(date, interval_minutes=60):
         # Define business hours and interval
-        business_hours_start = timezone.datetime.strptime("10:00", "%H:%M").time()
-        business_hours_end = timezone.datetime.strptime("22:00", "%H:%M").time()
-        interval_minutes = 30
+        business_hours_start = time(10, 0)  # 10:00 AM
+        business_hours_end = time(22, 0)    # 10:00 PM
+
+        # Ensure date is a datetime.date object
+        if isinstance(date, str):
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+        elif not isinstance(date, datetime):
+            date = datetime.combine(date, time.min)
 
         # Get existing bookings for the restaurant on the specified date
         existing_bookings = Booking.objects.filter(date=date).values_list('time', flat=True)
@@ -27,10 +32,16 @@ class Booking(models.Model):
         available_times = []
         current_time = business_hours_start
         while current_time < business_hours_end:
+            # Check if the current time is in the list of existing bookings
             if current_time not in existing_bookings:
                 available_times.append(current_time)
-            current_time = (timezone.datetime.combine(timezone.now(), current_time) + timezone.timedelta(minutes=interval_minutes)).time()
-        
+            # Increment the current time by the interval
+            next_time = (datetime.combine(date, current_time) + timedelta(minutes=interval_minutes)).time()
+            if next_time <= business_hours_end:
+                current_time = next_time
+            else:
+                break
+
         return available_times
 
 class Menu(models.Model):

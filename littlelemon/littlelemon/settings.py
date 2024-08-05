@@ -147,7 +147,7 @@ DJOSER = {
     # 'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     # 'SEND_ACTIVATION_EMAIL': True,
     # 'SERIALIZERS': {},
-    "USER_ID_FIELD":"username"
+    # "USER_ID_FIELD":"username"
 }
 
 # SIMPLE_JWT = {
