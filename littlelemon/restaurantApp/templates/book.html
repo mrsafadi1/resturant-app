@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<body class="bg-light">
+<div class="container pt-4">
+    <h1>Menu Items</h1>
+    <style>
+      /* Basic styling for the form */
+      .form-field {
+          margin-bottom: 10px;
+      }
+      label {
+          display: block;
+          font-weight: bold;
+      }
+  </style>
+    <div class="row">
+        <div class="column">
+          <!-- <form method="POST" id="form">
+            {% csrf_token %}
+            {{ form.as_p }} -->
+            <!-- <div class="form-first_name">
+              <label for="{{ form.name }}"> First Name: </label>
+              {{ form.first_name }}
+            </div>
+            <br>
+            <div class="form-field form-reservation_date">
+              <label for="{{ form.reservation_date.id_for_label }}">Reservation Date:</label>
+              {{ form.reservation_date }}
+            </div>
+            <br>
+            <div class="form-field form-reservation_time" id="">
+                <label for="{{ form.reservation_time.id_for_label }}"> Reservation Time: </label>
+                <select id="id_reservation_time" name="reservation_time">
+                  {% for hour in available_time_slots %}
+                      <option value="{{ hour }}">{{ hour }}</option>
+                  {% endfor %}
+              </select>
+            </div> -->
+            <!-- <div>
+              <label for="form-first_name">Name:</label>
+              <input type="text" placeholder="Your Name" maxlength="200" required="" id="first_name">
+            </div>
+            <div>
+              <label for="reservation_date">Reservation Date:</label>
+              <select id="reservation_date">
+                <option value="0">Select Date</option>
+              </select>
+            </div>
+              
+            <div>
+              <label for="reservation_time">Reservation time:</label>
+              <select id="reservation_time">
+                <option value="0">Select time</option>
+              </select>
+            </div> -->
+            <!-- <br><br>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form> -->
+          <form method="post" id="bookingForm">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Book</button>
+          </form>
+        </div>
+        <div class="column">
+          <h2>Bookings For today <span id="today"></span></h2>
+          <div id="bookings">
+            {{bookings}}
+          </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const availableTimes = '{{ available_times|safe }}';
+      const select = document.getElementById('id_reservation_time');  // Adjust to Django's default ID
+
+      // Function to format time to HH:MM
+      function formatTime(hours, minutes = 0) {
+          return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      }
+
+      // Generate time slots for the day and disable unavailable times
+      for (let hour = 0; hour < 24; hour++) {
+          const option = document.createElement('option');
+          const time = formatTime(hour);
+
+          option.value = time;
+          option.text = time;
+          if (!availableTimes.includes(time)) {
+              option.disabled = true;
+          }
+          select.appendChild(option);
+      }
+
+      // Add event listener to open date picker on focus
+      const dateInput = document.getElementById('id_reservation_date');
+      dateInput.addEventListener('focus', function() {
+          dateInput.showPicker();
+      });
+  });
+
+  document.getElementById('bookingForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+
+      fetch("{% url 'book' %}", {
+          method: 'POST',
+          body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.message === 'success') {
+              alert('Booking successful!');
+              this.reset();
+          } else {
+              alert('Error: ' + data.details);
+          }
+      });
+  });
+</script>
+<script>
+    // const form = document.getElementById('form');
+    // form.addEventListener("submit", submitHandler);
+
+    // function submitHandler(e) {
+    //     e.preventDefault();
+
+    //     fetch(form.action, {method:'POST', body: new FormData(form)})
+    //     .then(response=>response.json())
+    //     .then(data=>{
+    //             if (data.message === 'success') {
+    //                 alert('Success to book a reservation!');
+    //                 form.reset()
+    //             }
+    //             else{
+    //               alert('Failed to book a reservation!');
+ 
+    //             } 
+    //     });
+    // }
+
+    const bookingJson = '{{ bookings|escapejs }}';
+    console.log(bookingJson)
+    const available = '{{available_time_slots}}';
+    console.log(available);
+
+    function displayJson(jsonString) {
+        // Parse the JSON string into an object
+        const jsonArray = JSON.parse(jsonString);
+        let formattedData = '';
+
+        // Iterate over each object in the JSON array
+        jsonArray.forEach(jsonObject => {
+        // Extract specific attributes
+        const name = jsonObject.fields['first_name'];
+        const reservation_time = jsonObject.fields['reservation_time'];
+        
+        // Append formatted attributes to the formattedData string
+        formattedData += `
+            <strong>Name: </strong> ${name}<br>
+            <strong>booking Time: </strong> ${reservation_time}<br>
+            <br>
+        `;
+        });
+      document.getElementById('bookings').innerHTML = formattedData;
+    }
+
+    // Call the function with 
+    // if(bookingJson.length > 2){
+    //   displayJson(bookingJson);
+    // }
+    // else{
+    //   document.getElementById('bookings').innerHTML = "No bookings";
+    // }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the bookings JSON data from the template context
+            const bookingsJson = '{{ bookings|escapejs }}';
+            
+            // Parse the JSON data
+            const bookings = JSON.parse(bookingsJson);
+            
+            // Display the bookings in a readable format
+            const bookingsContainer = document.getElementById('bookings-container');
+            bookings.forEach(booking => {
+                const bookingElement = document.createElement('div');
+                bookingElement.textContent = `Name: ${booking.fields.first_name}, Date: ${booking.fields.reservation_date}, Time: ${booking.fields.reservation_time}`;
+                bookingsContainer.appendChild(bookingElement);
+            });
+        });
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     const select = document.getElementById('reservation_time');
+        
+    //     // Function to format time to HH:MM
+    //     function formatTime(hours, minutes = 0) {
+    //         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    //     }
+
+    //     // Generate time slots for the day
+    //     for (let hour = 0; hour < 24; hour++) {
+    //         const option = document.createElement('option');
+    //         option.value = formatTime(hour);
+    //         option.text = formatTime(hour);
+    //         select.appendChild(option);
+    //     }
+    // });
+
+    //     document.addEventListener('DOMContentLoaded', function() {
+    //     const select = document.getElementById('id_reservation_date');
+    //     const today = new Date();
+    //     const currentYear = today.getFullYear();
+    //     const currentMonth = today.getMonth(); // Note: Months are 0-based in JavaScript
+
+    //     // Get the last date of the current month
+    //     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    //     for (let day = 1; day <= daysInMonth; day++) {
+    //         const date = new Date(currentYear, currentMonth, day);
+    //         const dateString = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+    //         const option = document.createElement('option');
+    //         option.value = dateString;
+    //         option.text = dateString;
+
+    //         if (day === today.getDate()) {
+    //             option.selected = true; // Set today's date as the default selected value
+    //         }
+
+    //         select.appendChild(option);
+    //     }
+    // });
+
+        //     document.addEventListener('DOMContentLoaded', (event) => {
+        //         const dateField = document.querySelector('#id_reservation_date');
+        //         const today = new Date().toISOString().split('T')[0];
+        //         dateField.setAttribute('min', today);  // Disable past dates
+        //     });
+        // // document.addEventListener('DOMContentLoaded', (event) => {
+        // //         // Update the reservation_time field value
+        // //         const reservationTimeField = document.getElementById('id_reservation_time');
+        // //         reservationTimeField.value = '14:00';  // Set the value to 14:00
+        // //     });
+        //   document.addEventListener('DOMContentLoaded', function() {
+        //       const select = document.getElementById('id_reservation_time');  // Adjust to Django's default ID
+
+        //       // Function to format time to HH:MM
+        //       function formatTime(hours, minutes = 0) {
+        //           return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        //       }
+
+        //       // Generate time slots for the day
+        //       for (let hour = 0; hour < 24; hour++) {
+        //           const option = document.createElement('option');
+        //           option.value = formatTime(hour);
+        //           option.text = formatTime(hour);
+        //           select.appendChild(option);
+        //       }
+        //   });
+    
+</script>
+
+</body>
+
+{% endblock %}

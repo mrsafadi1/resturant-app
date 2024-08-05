@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section>
+  <article>
+    <h1>Make a reservation</h1>
+    <!--Begin row-->
+    <div class="row">
+      <!--Begin col-->
+      <div class="column">
+        <form method="POST" id="form">
+          {% csrf_token %}
+            <p>
+              <label for="first_name">Name:</label>
+              <input type="text" placeholder="Your Name" maxlength="200" required="" id="first_name">
+            </p>
+            
+            <p>
+              <label for="reservation_slot">reservation slot:</label>
+              <input type="text" placeholder="slot number" maxlength="200" required="" id="reservation_slot"> 
+            </p>
+            
+            <p>
+              <label for="reservation_date">Reservation Date:</label>
+              <select id="reservation_date">
+                <option value="0">Select Date</option>
+              </select>
+            </p>
+              
+            <p>
+              <label for="reservation_time">Reservation time:</label>
+              <select id="reservation_time">
+                <option value="0">Select time</option>
+              </select>
+            </p>
+          <!-- {{form.as_p}} -->
+          <button type="submit" class="button">Submit</button>
+      </form>
+      </div>
+      <!--End col-->
+
+      <!--Begin col-->
+      <div class="column">
+        <h2>Bookings For today <span id="today"></span></h2>
+        <div id="bookings">
+          {{bookings}}
+        </div>
+      </div>
+      <!--End col-->
+    </div>
+    <!--End row-->
+
+
+
+  </article>
+</section>
+
+
+<script>
+    const form = document.getElementById('form');
+    form.addEventListener("submit", submitHandler);
+
+    function submitHandler(e) {
+        e.preventDefault();
+
+        fetch(form.action, {method:'POST', body: new FormData(form)})
+        .then(response=>{
+          if(!response.ok){
+            alert('bad response');
+          }
+          else{
+            return response.json();
+          }
+          
+        })
+        .then(data=>{
+                if (data.message == 'success') {
+                    alert('Success!');
+                    form.reset()
+                }
+                else{
+                  console.log(data);
+                }
+
+        });
+    }
+
+    const bookingJson = '{{ bookings|escapejs }}';
+
+    function displayJson(jsonString) {
+        // Parse the JSON string into an object
+        const jsonObject = JSON.parse(jsonString);
+        // Convert the JSON object to a pretty-printed string
+        const prettyJson = JSON.stringify(jsonObject, null, 2);
+        // Replace line breaks with <br> tags for HTML
+        const formattedJson = prettyJson.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;');
+        // Inject the formatted JSON into the HTML element
+        document.getElementById('bookings').innerHTML = `<pre>${formattedJson}</pre>`;
+    }
+
+    // Call the function with the booking JSON data
+    if(bookingJson.length > 2){
+      displayJson(bookingJson);
+    }
+    else{
+      document.getElementById('bookings').innerHTML = "No bookings";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('reservation_date');
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth(); // Note: Months are 0-based in JavaScript
+
+    // Get the last date of the current month
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentYear, currentMonth, day);
+        const dateString = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+        const option = document.createElement('option');
+        option.value = dateString;
+        option.text = dateString;
+
+        if (day === today.getDate()) {
+            option.selected = true; // Set today's date as the default selected value
+        }
+
+        select.appendChild(option);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+        const select = document.getElementById('reservation_time');
+        
+        // Function to format time to HH:MM
+        function formatTime(hours, minutes = 0) {
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // Generate time slots for the day
+        for (let hour = 0; hour < 24; hour++) {
+            const option = document.createElement('option');
+            option.value = formatTime(hour);
+            option.text = formatTime(hour);
+            select.appendChild(option);
+        }
+    });
+
+</script>
+
+{% endblock %}
